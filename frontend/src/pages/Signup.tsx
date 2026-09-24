@@ -102,7 +102,7 @@ export default function Signup({ onNavigate }: Props) {
             </span>
           </label>
 
-          <button onClick={() => onNavigate('admin-dashboard')} className="w-full bg-gradient-to-r from-[#6D28D9] to-[#7C3AED] text-white py-3.5 rounded-xl font-semibold text-sm hover:opacity-95 hover:shadow-lg hover:shadow-violet-200 transition-all">
+          <button onClick={() => onNavigate('login')} className="w-full bg-gradient-to-r from-[#6D28D9] to-[#7C3AED] text-white py-3.5 rounded-xl font-semibold text-sm hover:opacity-95 hover:shadow-lg hover:shadow-violet-200 transition-all">
             Create Account
           </button>
         </div>

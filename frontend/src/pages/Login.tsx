@@ -1,13 +1,29 @@
 import { useState } from 'react';
+import { loginAdmin } from '../api/auth';
 
 interface Props {
   onNavigate: (page: string) => void;
 }
 
 export default function Login({ onNavigate }: Props) {
-  const [email, setEmail] = useState('admin@paperjam.gov.in');
-  const [password, setPassword] = useState('••••••••');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const submit = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      await loginAdmin(email, password, remember);
+      onNavigate('admin-dashboard');
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Unable to sign in.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#FEFCF8] flex">
@@ -110,6 +126,7 @@ export default function Login({ onNavigate }: Props) {
               <input
                 type="password"
                 value={password}
+                onFocus={() => setPassword('')}
                 onChange={e => setPassword(e.target.value)}
                 className="w-full bg-white border border-[#E8E4DC] rounded-xl px-4 py-3 text-sm text-[#1C1B22] focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                 placeholder="••••••••"
@@ -129,8 +146,10 @@ export default function Login({ onNavigate }: Props) {
               <button className="text-xs text-violet-600 hover:text-violet-800 font-medium">Forgot password?</button>
             </div>
 
-            <button onClick={() => onNavigate('admin-dashboard')} className="w-full bg-[#6D28D9] text-white py-3.5 rounded-xl font-semibold text-sm hover:bg-[#5B21B6] hover:shadow-lg hover:shadow-violet-200 transition-all">
-              Sign In
+            {error && <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700">{error}</div>}
+
+            <button onClick={submit} disabled={loading || !email || !password} className="w-full bg-[#6D28D9] text-white py-3.5 rounded-xl font-semibold text-sm hover:bg-[#5B21B6] hover:shadow-lg hover:shadow-violet-200 transition-all disabled:opacity-50">
+              {loading ? 'Signing in...' : 'Sign In'}
             </button>
 
             <div className="relative">

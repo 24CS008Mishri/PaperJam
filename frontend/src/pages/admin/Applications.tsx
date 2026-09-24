@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { applications } from '../../data';
 import { StatusBadge, SLABadge } from '../../components/StatusBadge';
+import { askWhyRequired } from '../../api/rag';
 
 interface Props { onNavigate: (page: string) => void; }
 
@@ -147,7 +148,30 @@ export default function Applications({ onNavigate }: Props) {
 
 function ApplicationDetail({ app, onBack }: { app: typeof applications[0]; onBack: () => void }) {
   const [activeTab, setActiveTab] = useState('overview');
+  const [whyLoading, setWhyLoading] = useState(false);
+  const [whyError, setWhyError] = useState('');
+  const [whyAnswer, setWhyAnswer] = useState<Awaited<ReturnType<typeof askWhyRequired>> | null>(null);
+  const [whyDocument, setWhyDocument] = useState('');
   const tabs = ['overview', 'documents', 'timeline', 'queries', 'audit'];
+
+  const explainRequirement = async (documentName: string) => {
+    setWhyDocument(documentName);
+    setWhyLoading(true);
+    setWhyError('');
+    setWhyAnswer(null);
+    try {
+      setWhyAnswer(await askWhyRequired(
+        `Why is ${documentName} required?`,
+        app.business,
+        documentName === 'Fire NOC' ? 'NOC' : undefined,
+        documentName === 'Fire NOC' ? 'FIRE' : undefined,
+      ));
+    } catch (reason) {
+      setWhyError(reason instanceof Error ? reason.message : 'The regulatory explanation could not be loaded.');
+    } finally {
+      setWhyLoading(false);
+    }
+  };
 
   return (
     <div className="p-6 max-w-screen-xl mx-auto">
@@ -278,6 +302,12 @@ function ApplicationDetail({ app, onBack }: { app: typeof applications[0]; onBac
                     <div className="text-xs text-[#7C7B85]">{doc.size}</div>
                   </div>
                   <StatusBadge status={doc.status} />
+                  <button
+                    onClick={() => explainRequirement(doc.name)}
+                    className="text-xs text-violet-700 border border-violet-200 bg-violet-50 rounded-lg px-2.5 py-1.5 font-semibold hover:bg-violet-100 whitespace-nowrap"
+                  >
+                    Why is this required?
+                  </button>
                 </div>
               ))}
             </div>
@@ -338,6 +368,20 @@ function ApplicationDetail({ app, onBack }: { app: typeof applications[0]; onBac
           </div>
         </div>
       </div>
+
+      {(whyLoading || whyAnswer || whyError) && (
+        <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-[#E8E4DC] shadow-2xl w-full max-w-xl p-6">
+            <div className="flex items-start justify-between gap-4 mb-5">
+              <div><div className="text-xs text-violet-700 font-semibold uppercase tracking-wide">Regulatory explanation</div><h2 className="font-display text-xl font-semibold text-[#1C1B22] mt-1">Why is {whyDocument} required?</h2></div>
+              <button onClick={() => { setWhyAnswer(null); setWhyError(''); }} className="p-2 rounded-xl hover:bg-[#F5F3EE] text-[#7C7B85]">×</button>
+            </div>
+            {whyLoading && <div className="text-sm text-[#7C7B85] py-8 text-center">Retrieving filtered regulatory sources...</div>}
+            {whyError && <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">{whyError}</div>}
+            {whyAnswer && <div className="space-y-5"><div><div className="text-xs font-semibold text-[#7C7B85] uppercase tracking-wide mb-2">Why is this required?</div><p className="text-sm leading-6 text-[#1C1B22] whitespace-pre-wrap">{whyAnswer.answer}</p></div><div><div className="text-xs font-semibold text-[#7C7B85] uppercase tracking-wide mb-2">Sources</div><div className="space-y-2">{whyAnswer.sources.map((source) => <div key={source.chunk_id} className="bg-[#FEFCF8] border border-[#E8E4DC] rounded-xl p-3"><div className="text-sm font-medium text-[#1C1B22]">{source.document_title}</div><div className="text-xs text-[#7C7B85] mt-1">{source.category} → {source.subcategory} · {source.section} · Page {source.page}</div>{source.document_id.startsWith('SYN-') && <div className="text-[10px] text-amber-700 mt-1">Synthetic demonstration source</div>}</div>)}</div></div></div>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

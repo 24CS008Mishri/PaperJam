@@ -19,6 +19,7 @@ import Queries from './pages/admin/Queries';
 import Users from './pages/admin/Users';
 import AuditLogs from './pages/admin/AuditLogs';
 import Settings from './pages/admin/Settings';
+import { getAccessToken, logoutAdmin } from './api/auth';
 
 type Page =
   | 'landing'
@@ -50,10 +51,16 @@ const adminPages = new Set<Page>([
 
 export default function App() {
   const [page, setPage] = useState<Page>('landing');
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string | undefined>();
 
-  const navigate = (p: string) => setPage(p as Page);
+  const navigate = (p: string, documentId?: string) => {
+    setSelectedDocumentId(documentId);
+    setPage(p as Page);
+  };
 
   const isAdmin = adminPages.has(page);
+
+  if (isAdmin && !getAccessToken()) return <Login onNavigate={navigate} />;
 
   if (page === 'landing') return <Landing onNavigate={navigate} />;
   if (page === 'login') return <Login onNavigate={navigate} />;
@@ -61,7 +68,7 @@ export default function App() {
 
   if (isAdmin) {
     return (
-      <AdminLayout currentPage={page} onNavigate={navigate}>
+      <AdminLayout currentPage={page} onNavigate={navigate} onLogout={() => { logoutAdmin().finally(() => navigate('landing')); }}>
         {page === 'admin-dashboard' && <Dashboard onNavigate={navigate} />}
         {page === 'admin-applications' && <Applications onNavigate={navigate} />}
         {page === 'admin-businesses' && <Businesses />}
@@ -69,7 +76,7 @@ export default function App() {
         {page === 'admin-departments' && <Departments />}
         {page === 'admin-knowledge' && <KnowledgeLibrary onNavigate={navigate} />}
         {page === 'admin-upload' && <UploadDocument onNavigate={navigate} />}
-        {page === 'admin-document-detail' && <DocumentDetail onNavigate={navigate} />}
+        {page === 'admin-document-detail' && <DocumentDetail onNavigate={navigate} documentId={selectedDocumentId} />}
         {page === 'admin-verification' && <DocumentVerification />}
         {page === 'admin-rag' && <RAGIntelligence />}
         {page === 'admin-schemes' && <Schemes />}

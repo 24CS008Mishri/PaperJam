@@ -1,5 +1,3 @@
-import type { AppStatus, VerificationStatus, Priority, QueryStatus } from '../data';
-
 const statusStyles: Record<string, string> = {
   'Submitted': 'bg-violet-50 text-violet-700 border-violet-200',
   'Document Check': 'bg-amber-50 text-amber-700 border-amber-200',

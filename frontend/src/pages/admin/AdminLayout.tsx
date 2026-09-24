@@ -4,6 +4,7 @@ interface Props {
   children: React.ReactNode;
   currentPage: string;
   onNavigate: (page: string) => void;
+  onLogout: () => void;
 }
 
 const navGroups = [
@@ -44,7 +45,7 @@ const navGroups = [
   },
 ];
 
-export default function AdminLayout({ children, currentPage, onNavigate }: Props) {
+export default function AdminLayout({ children, currentPage, onNavigate, onLogout }: Props) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -111,6 +112,7 @@ export default function AdminLayout({ children, currentPage, onNavigate }: Props
                 <div className="text-[10px] text-[#7C7B85] truncate">Super Admin</div>
               </div>
             )}
+            {sidebarOpen && <button onClick={onLogout} className="ml-auto text-[10px] text-[#7C7B85] hover:text-red-600">Sign out</button>}
           </div>
         </div>
       </aside>
